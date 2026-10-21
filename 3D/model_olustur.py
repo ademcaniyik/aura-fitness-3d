@@ -40,6 +40,14 @@ box('Fitness building',[-7,4.2,23], [14,8.4,31],'cream')
 box('Building roof',[-7,8.48,23],[14.4,.16,31.4],'roof')
 for z in range(11,37,5):box('Facade glazing', [.015,3.5,z],[.035,4,3],'glass')
 box('Front door',[-6,1.4,7.48],[1.8,2.8,.04],'glass')
+# Large opposing Aura building; keep parking area clear.
+box('Aura Fitness east building',[69,6,23],[16,12,31],'cream')
+box('Aura Fitness roof',[69,12.12,23],[16.5,.24,31.5],'black')
+for z in range(11,37,5):
+ box('Aura west glazing',[60.98,4,z],[.04,5.2,3.4],'glass')
+for x in [64,69,74]:box('Aura front glazing',[x,3.1,7.47],[3.7,4.5,.04],'glass')
+box('Aura front sign backing',[69,9.3,7.38],[14,5.3,.16],'black')
+box('Aura courtyard sign backing',[60.9,9.3,23],[.16,5.3,14],'black')
 # curbs/fence boundary leaves main opening 28-36 unobstructed
 for a,b in [(-15,28),(36,60)]:
  box('Front boundary curb',[(a+b)/2,.12,1.2],[b-a,.24,.22],'curb')
@@ -58,9 +66,9 @@ camera('C3 exit camera',36.6,1.7,0)
 for i in range(16):
  box('One way spike strip module',[2.8,.09,2.5+(i+.5)*.25],[.45,.18,.25],'yellow' if i%2==0 else 'black')
  box('Spike tooth',[2.8,.23,2.5+(i+.5)*.25],[.05,.18,.07],'metal')
-arrow('Side right to left before',8,4.5,math.pi/2,'red');arrow('Side right to left after',-1,4.5,math.pi/2,'red')
-arrow('Main entry',30,0,math.pi,'red');arrow('Main exit',34,0,0,'green')
-arrow('Entry internal',30,6,math.pi,'white');arrow('Exit internal',34,6,0,'white')
+arrow('Side entry before',-1,4.5,-math.pi/2,'red');arrow('Side entry after',8,4.5,-math.pi/2,'red')
+arrow('Main exit',30,0,0,'green');arrow('Main entry',34,0,math.pi,'red')
+arrow('Exit internal',30,6,0,'white');arrow('Entry internal',34,6,math.pi,'white')
 random.seed(12)
 cs=['#b9bdc2','#eeeeea','#313941','#782e2b','#77888f']
 for row,z in enumerate([16,22,35]):
@@ -95,6 +103,31 @@ for col in palette:
  g['materials'].append({'name':col,'pbrMetallicRoughness':{'baseColorFactor':rgb+[1],'metallicFactor':.05,'roughnessFactor':.75}})
  g['meshes'].append({'primitives':[{'attributes':{'POSITION':0,'NORMAL':1},'indices':2,'material':len(g['materials'])-1}]})
 for o in objects:g['nodes'].append({'name':o['name'],'mesh':palette.index(o['color']),'translation':o['pos'],'scale':o['size'],'rotation':[0,math.sin(o['rot']/2),0,math.cos(o['rot']/2)]})
+# Embedded texture and two UV-mapped signs (front and parking-facing facade).
+def append_buffer(data):
+ global binary
+ binary += b'\0' * ((-len(binary))%4)
+ index=len(g['bufferViews']);g['bufferViews'].append({'buffer':0,'byteOffset':len(binary),'byteLength':len(data)})
+ binary+=data
+ return index
+image_view=append_buffer((P/'aura-tabela.png').read_bytes())
+g['images']=[{'bufferView':image_view,'mimeType':'image/png'}]
+g['samplers']=[{'magFilter':9729,'minFilter':9729,'wrapS':33071,'wrapT':33071}]
+g['textures']=[{'source':0,'sampler':0}]
+material=len(g['materials']);g['materials'].append({'name':'Aura logo and lettering','doubleSided':True,'pbrMetallicRoughness':{'baseColorTexture':{'index':0},'metallicFactor':0,'roughnessFactor':1}})
+# Planes face the road (-z); rotation pi means local left stays visually left.
+positions=[-7,-2.5,0,7,-2.5,0,7,2.5,0,-7,2.5,0]
+uv=[0,1,1,1,1,0,0,0]
+attrs=[]
+for vals,typ,count in [(positions,'VEC3',4),(uv,'VEC2',4)]:
+ bv=append_buffer(struct.pack('<%sf'%len(vals),*vals));a={'bufferView':bv,'componentType':5126,'count':count,'type':typ}
+ if typ=='VEC3':a.update(min=[-7,-2.5,0],max=[7,2.5,0])
+ attrs.append(len(g['accessors']));g['accessors'].append(a)
+bv=append_buffer(struct.pack('<6H',0,1,2,0,2,3));ix=len(g['accessors']);g['accessors'].append({'bufferView':bv,'componentType':5123,'count':6,'type':'SCALAR'})
+mesh=len(g['meshes']);g['meshes'].append({'primitives':[{'attributes':{'POSITION':attrs[0],'TEXCOORD_0':attrs[1]},'indices':ix,'material':material}]})
+for name,pos,angle in [('Aura road sign',[-69,9.3,7.28],math.pi),('Aura parking sign',[-60.78,9.3,23],math.pi/2)]:
+ g['scenes'][0]['nodes'].append(len(g['nodes']));g['nodes'].append({'name':name,'mesh':mesh,'translation':pos,'rotation':[0,math.sin(angle/2),0,math.cos(angle/2)]})
+g['buffers'][0]['byteLength']=len(binary)
 j=json.dumps(g,separators=(',',':')).encode();j+=b' '*((-len(j))%4);binary+=b'\0'*((-len(binary))%4)
 (P/'aura-otopark.glb').write_bytes(struct.pack('<III',0x46546c67,2,12+8+len(j)+8+len(binary))+struct.pack('<II',len(j),0x4e4f534a)+j+struct.pack('<II',len(binary),0x004e4942)+binary)
 # OBJ interchange, metres and named objects

@@ -32,3 +32,9 @@ Konsept modeldir; saha ölçümü veya uygulama projesi değildir. Geçişler ya
 Canlı sürüm, üretilen HTML dosyasının sunucuda `/var/www/candemsoft.store/aura-fitness-3d/index.html` olarak yayınlanmasıyla çalışır. GitHub'a push otomatik dağıtım yapmaz.
 
 Three.js r160 MIT lisanslıdır; lisansı `3D/THREE-LICENSE.txt` içindedir.
+
+## Güncel yerleşim
+
+Yan kapı okları otoparka giriş yönündedir. Ana kapının giriş ve çıkış okları yer değiştirmiştir. Mevcut binanın karşısında büyük Aura Fitness binası, yol ve otopark cephelerinde logo ve yazılı tabelalar bulunur. Logo kaynağı: https://aurafitnessclub.com/assets/img/aura-fitness-logo.webp
+
+Tabelanın PNG dokusu GLB ve çevrimdışı HTML içine gömülüdür; OBJ yalnızca geometri içerir. `tabela_olustur.py` tabelayı Pillow ile yeniden üretir (font yolu macOS içindir); hazır PNG depoda bulunduğundan normal model üretimi için bu adım gerekli değildir.
